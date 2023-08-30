@@ -1,0 +1,29 @@
+Taxi represents an individual taxi with a location and a destination; Dispatcher represents a fleet of taxis.
+
+If a thread calls setLocation in response to an update from a GPS receiver, it first updates the taxi’s location and
+then checks to see if it has reached its destination.
+If it has, it informs the dispatcher that it needs a new destination.
+
+Since both setLocation and notifyAvailable are synchronized, the thread calling setLocation acquires the Taxi lock
+and then the Dispatcher lock.
+
+Similarly, a thread calling getImage acquires the Dispatcher lock and then each Taxi lock (one at at time). Just as
+in LeftRightDeadlock, two locks are acquired by two threads in different orders, risking deadlock.
+
+It was easy to spot the deadlock possibility in LeftRightDeadlock or transferMoney by looking for methods that acquire
+two locks. Spotting the deadlock possibility in Taxi and Dispatcher is a little harder: the warning sign is that an
+alien method is being called while holding a lock.
+
+Invoking an alien method with a lock held is asking for liveness trouble. The alien method might acquire other locks
+(risking deadlock) or block for an unexpectedly long time, stalling other threads that need the lock you hold.
+
+Calling a method with no locks held is called an open call, and classes that rely on open calls are more well-behaved
+and composable than classes that make calls with locks held.
+
+
+>>>>>>>>>>>>> Loss Of Atomicity Is Ok In Many cases
+In many cases, the loss of atomicity is perfectly acceptable; there’s no reason that updating a taxi’s location and
+notifying the dispatcher that it is ready for a new destination need be an atomic operation.
+
+In the deadlock-prone version, getImage produces a complete snapshot of the fleet locations at that instant; in the
+refactored version, it fetches the location of each taxi at slightly different times.
